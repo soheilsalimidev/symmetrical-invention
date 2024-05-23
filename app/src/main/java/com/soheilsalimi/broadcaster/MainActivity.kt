@@ -1,46 +1,79 @@
 package com.soheilsalimi.broadcaster
 
+import android.Manifest
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
 import com.soheilsalimi.broadcaster.ui.theme.BroadCasterTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val InterNetBCR = InterNetBCR()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        registerReceiver(
+            InterNetBCR,
+            IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION)
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                0
+            )
+        }
+
         setContent {
             BroadCasterTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Greeting("Android")
+                    Button(onClick = {
+                        Intent(applicationContext, ForegroundService::class.java).also {
+                            it.action = ForegroundService.Actions.START.toString()
+                            it.putExtra("state" , 1);
+                            startService(it)
+                        }
+                    }) {
+                        Text(text="Star Service")
+                    }
+
+                    Button(onClick = {3
+                        Intent(applicationContext, ForegroundService::class.java).also {
+                            it.action = ForegroundService.Actions.STOP.toString()
+                            startService(it)
+                        }
+                    }) {
+                        Text(text="Stop Service")
+                    }
                 }
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    BroadCasterTheme {
-        Greeting("Android")
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(InterNetBCR)
     }
 }
