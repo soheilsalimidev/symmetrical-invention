@@ -33,5 +33,10 @@ class InterNetBCR : BroadcastReceiver() {
             it.putExtra("state", getConnectionType(context));
             context.startService(it)
         }
+        saveLogs.AppendLog(context , "network is " + when (getConnectionType(context)) {
+            0 -> "not connected"
+            1 -> "mobile connected"
+            else -> "wifi"
+        })
     }
 }

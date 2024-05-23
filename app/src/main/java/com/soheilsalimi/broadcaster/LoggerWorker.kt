@@ -12,15 +12,17 @@ class LoggerWorker constructor(
     workerParameters: WorkerParameters,
 ): CoroutineWorker(context, workerParameters) {
 
-    init {
-
-    }
     override suspend fun doWork(): Result {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val bluetoothAdapter = bluetoothManager.adapter
-        Log.i("worker_airplane", "bluetooth: "+   bluetoothAdapter?.isEnabled + " airplane is : " + isAirplaneModeOn(context))
-
-        return Result.success()
+        try {
+            val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothAdapter = bluetoothManager.adapter
+            Log.i("worker_airplane", "bluetooth: "+   bluetoothAdapter?.isEnabled + " airplane is : " + isAirplaneModeOn(context))
+            saveLogs.AppendLog(context , "bluetooth: "+   bluetoothAdapter?.isEnabled + " airplane is : " + isAirplaneModeOn(context))
+        }catch (e:Error){
+            Log.i("worker_airplane", "approve permissions")
+            saveLogs.AppendLog(context , "worker failed because of no permission")
+        }
+             return Result.success()
     }
 
     private fun isAirplaneModeOn(context: Context): Boolean {
