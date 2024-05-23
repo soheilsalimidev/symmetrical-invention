@@ -1,31 +1,29 @@
 package com.soheilsalimi.broadcaster
 
-import android.Manifest
-import android.content.Intent
-import android.content.IntentFilter
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.net.wifi.WifiManager
+
 import android.os.Build
+import android.Manifest
+import android.content.IntentFilter
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.LaunchedEffect
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.core.app.ActivityCompat
 import com.soheilsalimi.broadcaster.ui.theme.BroadCasterTheme
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
     private val InterNetBCR = InterNetBCR()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -44,34 +42,26 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BroadCasterTheme {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Button(onClick = {
-                        Intent(applicationContext, ForegroundService::class.java).also {
-                            it.action = ForegroundService.Actions.START.toString()
-                            it.putExtra("state" , 1);
-                            startService(it)
-                        }
-                    }) {
-                        Text(text="Star Service")
-                    }
+                LaunchedEffect(key1 = Unit) {
+                    val workRequest = PeriodicWorkRequestBuilder<LoggerWorker>(
+                        repeatInterval = 2,
+                        repeatIntervalTimeUnit = TimeUnit.MINUTES,
+                    ).setBackoffCriteria(
+                        backoffPolicy = BackoffPolicy.LINEAR,
+                        duration = Duration.ofSeconds(15)
+                    ).build()
 
-                    Button(onClick = {3
-                        Intent(applicationContext, ForegroundService::class.java).also {
-                            it.action = ForegroundService.Actions.STOP.toString()
-                            startService(it)
-                        }
-                    }) {
-                        Text(text="Stop Service")
-                    }
+                    val workManager = WorkManager.getInstance(applicationContext)
+                    workManager.enqueueUniquePeriodicWork(
+                        "myWorkerName",
+                        ExistingPeriodicWorkPolicy.KEEP,
+                        workRequest
+                    )
                 }
+
             }
         }
     }
-
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(InterNetBCR)
