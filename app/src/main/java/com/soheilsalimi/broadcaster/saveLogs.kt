@@ -39,6 +39,7 @@ class saveLogs {
                 } }
             } catch (_: IOException) {
             }
+            list.reverse()
             return list
         }
 
